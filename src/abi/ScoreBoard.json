@@ -1,8 +1,13 @@
 [
   "function bestScore(address) view returns (uint256)",
-  "function topScores(uint256) view returns (address player, uint256 score)",
-  "function submitScore(uint256 score)",
-  "function getLeaderboard() view returns (address[10] players, uint256[10] scores)",
+  "function nicknameOf(address) view returns (bytes32)",
+  "function topScores(uint256) view returns (address player, uint256 score, bytes32 nickname)",
+  "function submitScore(uint256 score, bytes32 nickname)",
+  "function getLeaderboard() view returns (address[10] players, uint256[10] scores, bytes32[10] nicknames)",
+  "function getWeeklyLeaderboard(uint256 weekId) view returns (address[10] players, uint256[10] scores, bytes32[10] nicknames)",
+  "function getMonthlyLeaderboard(uint256 monthId) view returns (address[10] players, uint256[10] scores, bytes32[10] nicknames)",
+  "function getCurrentWeekId() view returns (uint256)",
+  "function getCurrentMonthId() view returns (uint256)",
   "function getMyBestScore(address account) view returns (uint256)",
-  "event ScoreSubmitted(address indexed player, uint256 score, bool isNewRecord)"
+  "event ScoreSubmitted(address indexed player, uint256 score, bytes32 nickname, bool isNewRecord)"
 ]

@@ -9,18 +9,35 @@ function shortAddress(addr) {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
 }
 
+const DEFAULT_NICKNAME = "用户";
+
 export default function App() {
   const game = useGame1024();
   const web3 = useScoreBoard();
+  const [nickname, setNickname] = useState(DEFAULT_NICKNAME);
   const [submitResult, setSubmitResult] = useState(null);
 
   const handleSubmitScore = async () => {
     if (game.score <= 0) return;
     setSubmitResult(null);
-    const result = await web3.submitScore(game.score);
+    const result = await web3.submitScore(game.score, nickname.trim() || DEFAULT_NICKNAME);
     setSubmitResult(result.ok ? "success" : "error");
     if (result.ok) setTimeout(() => setSubmitResult(null), 3000);
   };
+
+  const displayName = (list, addr, index) => {
+    const nick = list.nicknames && list.nicknames[index];
+    return (nick && String(nick).trim()) ? nick : shortAddress(addr);
+  };
+
+  const weekLabel =
+    web3.currentWeekId != null
+      ? `第 ${web3.currentWeekId} 周`
+      : "";
+  const monthLabel =
+    web3.currentMonthId != null
+      ? `第 ${web3.currentMonthId} 月`
+      : "";
 
   return (
     <div className="app">
@@ -45,6 +62,19 @@ export default function App() {
           )}
         </div>
 
+        <div className="nickname-row">
+          <label className="nickname-label">
+            昵称
+            <input
+              type="text"
+              className="nickname-input"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value.slice(0, 20))}
+              placeholder={DEFAULT_NICKNAME}
+              maxLength={20}
+            />
+          </label>
+        </div>
         <div className="wallet-row">
           {!web3.account ? (
             <button className="btn btn-connect" onClick={web3.connect} disabled={web3.loading}>
@@ -94,22 +124,63 @@ export default function App() {
         )}
       </main>
 
-      <section className="leaderboard">
-        <h2>排行榜 (Base)</h2>
+      <section className="leaderboard-section">
         {!web3.contractAddress ? (
-          <p className="dim">部署合约后设置 VITE_SCOREBOARD_ADDRESS 以显示排行榜</p>
-        ) : web3.leaderboard.players.length === 0 ? (
-          <p className="dim">暂无记录，成为第一个上链分数吧</p>
+          <div className="leaderboard">
+            <h2>排行榜 (Base)</h2>
+            <p className="dim">部署合约后设置 VITE_SCOREBOARD_ADDRESS 以显示排行榜</p>
+          </div>
         ) : (
-          <ol className="leader-list">
-            {web3.leaderboard.players.map((addr, i) => (
-              <li key={addr + i}>
-                <span className="rank">{i + 1}</span>
-                <span className="addr">{shortAddress(addr)}</span>
-                <span className="score">{web3.leaderboard.scores[i]}</span>
-              </li>
-            ))}
-          </ol>
+          <>
+            <div className="leaderboard">
+              <h2>本周榜单 {weekLabel && <span className="week-tag">{weekLabel}</span>}</h2>
+              {web3.weeklyLeaderboard.players.length === 0 ? (
+                <p className="dim">本周暂无记录</p>
+              ) : (
+                <ol className="leader-list">
+                  {web3.weeklyLeaderboard.players.map((addr, i) => (
+                    <li key={`w-${addr}-${i}`}>
+                      <span className="rank">{i + 1}</span>
+                      <span className="name">{displayName(web3.weeklyLeaderboard, addr, i)}</span>
+                      <span className="score">{web3.weeklyLeaderboard.scores[i]}</span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+            <div className="leaderboard">
+              <h2>本月榜单 {monthLabel && <span className="month-tag">{monthLabel}</span>}</h2>
+              {web3.monthlyLeaderboard.players.length === 0 ? (
+                <p className="dim">本月暂无记录</p>
+              ) : (
+                <ol className="leader-list">
+                  {web3.monthlyLeaderboard.players.map((addr, i) => (
+                    <li key={`m-${addr}-${i}`}>
+                      <span className="rank">{i + 1}</span>
+                      <span className="name">{displayName(web3.monthlyLeaderboard, addr, i)}</span>
+                      <span className="score">{web3.monthlyLeaderboard.scores[i]}</span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+            <div className="leaderboard">
+              <h2>总榜</h2>
+              {web3.leaderboard.players.length === 0 ? (
+                <p className="dim">暂无记录，成为第一个上链分数吧</p>
+              ) : (
+                <ol className="leader-list">
+                  {web3.leaderboard.players.map((addr, i) => (
+                    <li key={`a-${addr}-${i}`}>
+                      <span className="rank">{i + 1}</span>
+                      <span className="name">{displayName(web3.leaderboard, addr, i)}</span>
+                      <span className="score">{web3.leaderboard.scores[i]}</span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+          </>
         )}
       </section>
 

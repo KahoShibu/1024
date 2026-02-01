@@ -1,6 +1,29 @@
 import { useState, useCallback, useEffect } from "react";
-import { BrowserProvider, Contract } from "ethers";
+import { BrowserProvider, Contract, encodeBytes32String, parseBytes32String } from "ethers";
 import ScoreBoardAbi from "../abi/ScoreBoard.json";
+
+const MAX_NICKNAME_UTF8_BYTES = 31;
+
+/** 将字符串编码为 bytes32，超出部分截断 */
+function nicknameToBytes32(str) {
+  if (!str || typeof str !== "string") return "0x" + "0".repeat(64);
+  const trimmed = str.trim().slice(0, 32);
+  try {
+    return encodeBytes32String(trimmed);
+  } catch {
+    return "0x" + "0".repeat(64);
+  }
+}
+
+/** 将链上 bytes32 解码为昵称字符串 */
+function bytes32ToNickname(bytes32) {
+  if (!bytes32 || bytes32 === "0x" + "0".repeat(64)) return "";
+  try {
+    return parseBytes32String(bytes32).replace(/\0+$/, "").trim() || "";
+  } catch {
+    return "";
+  }
+}
 
 const BASE_MAINNET = { chainId: 8453, name: "Base Mainnet" };
 const BASE_SEPOLIA = { chainId: 84532, name: "Base Sepolia" };
@@ -12,7 +35,11 @@ export function useScoreBoard() {
   const [chainId, setChainId] = useState(null);
   const [provider, setProvider] = useState(null);
   const [contract, setContract] = useState(null);
-  const [leaderboard, setLeaderboard] = useState({ players: [], scores: [] });
+  const [leaderboard, setLeaderboard] = useState({ players: [], scores: [], nicknames: [] });
+  const [weeklyLeaderboard, setWeeklyLeaderboard] = useState({ players: [], scores: [], nicknames: [] });
+  const [monthlyLeaderboard, setMonthlyLeaderboard] = useState({ players: [], scores: [], nicknames: [] });
+  const [currentWeekId, setCurrentWeekId] = useState(null);
+  const [currentMonthId, setCurrentMonthId] = useState(null);
   const [myBestOnChain, setMyBestOnChain] = useState(null);
   const [loading, setLoading] = useState(false);
   const [txPending, setTxPending] = useState(false);
@@ -124,21 +151,70 @@ export function useScoreBoard() {
     }
   }, [account]);
 
+  const parseLeaderboardResult = (players, scores, nicknames) => {
+    const zero = "0x0000000000000000000000000000000000000000";
+    const pairs = players
+      .map((p, i) => [p, scores[i], nicknames[i]])
+      .filter(([p]) => p !== zero);
+    return {
+      players: pairs.map(([p]) => p),
+      scores: pairs.map(([, s]) => Number(s)),
+      nicknames: pairs.map(([, , n]) => bytes32ToNickname(n)),
+    };
+  };
+
   const fetchLeaderboard = useCallback(async () => {
     if (!CONTRACT_ADDRESS || !provider) return;
     try {
       const c = new Contract(CONTRACT_ADDRESS, ScoreBoardAbi, provider);
-      const [players, scores] = await c.getLeaderboard();
-      const zero = "0x0000000000000000000000000000000000000000";
-      const pairs = players
-        .map((p, i) => [p, scores[i]])
-        .filter(([p]) => p !== zero);
-      setLeaderboard({
-        players: pairs.map(([p]) => p),
-        scores: pairs.map(([, s]) => Number(s)),
-      });
+      const [players, scores, nicknames] = await c.getLeaderboard();
+      setLeaderboard(parseLeaderboardResult(players, scores, nicknames));
     } catch (e) {
       console.warn("fetchLeaderboard", e);
+    }
+  }, [provider]);
+
+  const fetchCurrentWeekId = useCallback(async () => {
+    if (!CONTRACT_ADDRESS || !provider) return;
+    try {
+      const c = new Contract(CONTRACT_ADDRESS, ScoreBoardAbi, provider);
+      const weekId = await c.getCurrentWeekId();
+      setCurrentWeekId(Number(weekId));
+    } catch (e) {
+      console.warn("fetchCurrentWeekId", e);
+    }
+  }, [provider]);
+
+  const fetchCurrentMonthId = useCallback(async () => {
+    if (!CONTRACT_ADDRESS || !provider) return;
+    try {
+      const c = new Contract(CONTRACT_ADDRESS, ScoreBoardAbi, provider);
+      const monthId = await c.getCurrentMonthId();
+      setCurrentMonthId(Number(monthId));
+    } catch (e) {
+      console.warn("fetchCurrentMonthId", e);
+    }
+  }, [provider]);
+
+  const fetchWeeklyLeaderboard = useCallback(async (weekId) => {
+    if (!CONTRACT_ADDRESS || !provider || weekId == null) return;
+    try {
+      const c = new Contract(CONTRACT_ADDRESS, ScoreBoardAbi, provider);
+      const [players, scores, nicknames] = await c.getWeeklyLeaderboard(weekId);
+      setWeeklyLeaderboard(parseLeaderboardResult(players, scores, nicknames));
+    } catch (e) {
+      console.warn("fetchWeeklyLeaderboard", e);
+    }
+  }, [provider]);
+
+  const fetchMonthlyLeaderboard = useCallback(async (monthId) => {
+    if (!CONTRACT_ADDRESS || !provider || monthId == null) return;
+    try {
+      const c = new Contract(CONTRACT_ADDRESS, ScoreBoardAbi, provider);
+      const [players, scores, nicknames] = await c.getMonthlyLeaderboard(monthId);
+      setMonthlyLeaderboard(parseLeaderboardResult(players, scores, nicknames));
+    } catch (e) {
+      console.warn("fetchMonthlyLeaderboard", e);
     }
   }, [provider]);
 
@@ -154,7 +230,7 @@ export function useScoreBoard() {
   }, [provider, account]);
 
   const submitScore = useCallback(
-    async (score) => {
+    async (score, nickname = "用户") => {
       if (!contract || !isBase) {
         setError("请先连接钱包并切换到 Base 网络");
         return { ok: false };
@@ -163,13 +239,22 @@ export function useScoreBoard() {
         setError("分数必须大于 0");
         return { ok: false };
       }
+      const name = (nickname && String(nickname).trim()) || "用户";
+      if (new TextEncoder().encode(name).length > MAX_NICKNAME_UTF8_BYTES) {
+        setError("昵称过长，最多 31 字节（约 10 个汉字）");
+        return { ok: false };
+      }
       setError(null);
       setTxPending(true);
       try {
-        const tx = await contract.submitScore(score);
+        const tx = await contract.submitScore(score, nicknameToBytes32(name));
         await tx.wait();
         await fetchMyBest();
         await fetchLeaderboard();
+        const weekId = await contract.getCurrentWeekId();
+        const monthId = await contract.getCurrentMonthId();
+        await fetchWeeklyLeaderboard(Number(weekId));
+        await fetchMonthlyLeaderboard(Number(monthId));
         return { ok: true };
       } catch (e) {
         const msg = e.reason || e.shortMessage || e.message || "提交失败";
@@ -179,7 +264,7 @@ export function useScoreBoard() {
         setTxPending(false);
       }
     },
-    [contract, isBase, fetchMyBest, fetchLeaderboard]
+    [contract, isBase, fetchMyBest, fetchLeaderboard, fetchWeeklyLeaderboard, fetchMonthlyLeaderboard]
   );
 
   useEffect(() => {
@@ -197,8 +282,22 @@ export function useScoreBoard() {
   useEffect(() => {
     if (CONTRACT_ADDRESS && provider) {
       fetchLeaderboard();
+      fetchCurrentWeekId();
+      fetchCurrentMonthId();
     }
-  }, [provider, CONTRACT_ADDRESS, fetchLeaderboard]);
+  }, [provider, CONTRACT_ADDRESS, fetchLeaderboard, fetchCurrentWeekId, fetchCurrentMonthId]);
+
+  useEffect(() => {
+    if (CONTRACT_ADDRESS && provider && currentWeekId != null) {
+      fetchWeeklyLeaderboard(currentWeekId);
+    }
+  }, [provider, CONTRACT_ADDRESS, currentWeekId, fetchWeeklyLeaderboard]);
+
+  useEffect(() => {
+    if (CONTRACT_ADDRESS && provider && currentMonthId != null) {
+      fetchMonthlyLeaderboard(currentMonthId);
+    }
+  }, [provider, CONTRACT_ADDRESS, currentMonthId, fetchMonthlyLeaderboard]);
 
   useEffect(() => {
     if (account && CONTRACT_ADDRESS && provider) {
@@ -213,6 +312,10 @@ export function useScoreBoard() {
     networkName,
     contractAddress: CONTRACT_ADDRESS,
     leaderboard,
+    weeklyLeaderboard,
+    monthlyLeaderboard,
+    currentWeekId,
+    currentMonthId,
     myBestOnChain,
     loading,
     txPending,
@@ -222,6 +325,10 @@ export function useScoreBoard() {
     switchToBaseSepolia,
     submitScore,
     fetchLeaderboard,
+    fetchWeeklyLeaderboard,
+    fetchMonthlyLeaderboard,
+    fetchCurrentWeekId,
+    fetchCurrentMonthId,
     fetchMyBest,
   };
 }

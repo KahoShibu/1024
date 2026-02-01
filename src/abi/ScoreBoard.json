@@ -1,0 +1,8 @@
+[
+  "function bestScore(address) view returns (uint256)",
+  "function topScores(uint256) view returns (address player, uint256 score)",
+  "function submitScore(uint256 score)",
+  "function getLeaderboard() view returns (address[10] players, uint256[10] scores)",
+  "function getMyBestScore(address account) view returns (uint256)",
+  "event ScoreSubmitted(address indexed player, uint256 score, bool isNewRecord)"
+]

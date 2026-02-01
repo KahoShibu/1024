@@ -1,0 +1,88 @@
+.game-board {
+  --cell-size: clamp(64px, 14vw, 88px);
+  --gap: 8px;
+  --radius: 10px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, var(--cell-size));
+  grid-template-rows: repeat(4, var(--cell-size));
+  gap: var(--gap);
+  background: var(--surface);
+  padding: var(--gap);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(1.25rem, 4vw, 1.75rem);
+  font-weight: 700;
+  border-radius: 6px;
+  transition: transform 0.12s ease, background 0.15s ease;
+  color: var(--text);
+}
+
+.tile-0 {
+  background: var(--tile-2);
+  color: transparent;
+}
+
+.tile-2 {
+  background: var(--tile-2);
+  color: var(--text-dim);
+}
+
+.tile-4 {
+  background: var(--tile-4);
+  color: var(--text);
+}
+
+.tile-8 {
+  background: var(--tile-8);
+  color: #1a1a20;
+}
+
+.tile-16 {
+  background: var(--tile-16);
+  color: #1a1a20;
+}
+
+.tile-32 {
+  background: var(--tile-32);
+  color: #fff;
+}
+
+.tile-64 {
+  background: var(--tile-64);
+  color: #fff;
+}
+
+.tile-128 {
+  background: var(--tile-128);
+  color: #1a1a20;
+  font-size: clamp(1rem, 3.2vw, 1.4rem);
+}
+
+.tile-256 {
+  background: var(--tile-256);
+  color: #1a1a20;
+  font-size: clamp(1rem, 3.2vw, 1.4rem);
+}
+
+.tile-512 {
+  background: var(--tile-512);
+  color: #1a1a20;
+  font-size: clamp(1rem, 3.2vw, 1.4rem);
+}
+
+.tile-1024 {
+  background: var(--tile-1024);
+  color: #1a1a20;
+  font-size: clamp(0.9rem, 2.8vw, 1.2rem);
+  box-shadow: 0 0 20px rgba(240, 193, 75, 0.4);
+}

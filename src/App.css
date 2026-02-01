@@ -1,0 +1,224 @@
+.app {
+  max-width: 420px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.header {
+  text-align: center;
+  width: 100%;
+}
+
+.header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--tile-1024);
+  text-shadow: 0 0 24px rgba(240, 193, 75, 0.3);
+}
+
+.subtitle {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+}
+
+.scores {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.score-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  min-width: 72px;
+}
+
+.score-box .label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.score-box .value {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.score-box.onchain .value {
+  color: var(--accent);
+}
+
+.wallet-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.addr {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-connect {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-connect:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.btn-small {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-small:hover {
+  background: var(--border);
+}
+
+.btn-primary {
+  background: var(--tile-1024);
+  color: #1a1a20;
+}
+
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.btn-submit {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-submit:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.btn-submit:disabled {
+  background: var(--tile-4);
+  color: var(--text-dim);
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.error-msg {
+  color: #e85a4a;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+.success-msg {
+  color: var(--success);
+  font-size: 0.9rem;
+}
+
+.main {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.overlay-msg {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 15, 18, 0.9);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.leaderboard {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.leaderboard h2 {
+  font-size: 1rem;
+  color: var(--text-dim);
+  margin-bottom: 0.75rem;
+}
+
+.leader-list {
+  list-style: none;
+}
+
+.leader-list li {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+
+.leader-list li:last-child {
+  border-bottom: none;
+}
+
+.leader-list .rank {
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.leader-list .addr {
+  font-family: "JetBrains Mono", monospace;
+  color: var(--text);
+}
+
+.leader-list .score {
+  font-weight: 700;
+  color: var(--tile-1024);
+}
+
+.dim {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+
+.footer {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  text-align: center;
+}
